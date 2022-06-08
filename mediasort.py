@@ -6,19 +6,22 @@ import shutil
 
 check_created_folders = []
 check_created_files = []
+file_read_ct = img_file_read_ct = file_ign_ct = video_file_read_ct = folder_create_ct = file_copied_ct =  0
 
 for root, subdirs, files in os.walk('randomfiles'):
-    print(root,subdirs,files)
+    #print(root,subdirs,files)
     for each_file in files:
+        file_read_ct += 1
         info_found = True
         file_name = os.path.join(root,each_file)
-        print(f"\n{file_name}")
+        #print(f"\n{file_name}")
         try:
             ext_file = file_name[file_name.rfind('.')+1:].upper()
         except:
             ext_file = ""
         creation_time = datetime.fromtimestamp(os.path.getmtime(file_name)).strftime("%Y-%m-%d")
         if ext_file in ['MOV','3GP','MP4','MPEG']:
+            video_file_read_ct += 1
             vid_dict = ffmpeg.probe(file_name)["streams"]
             model = 'Other video'
             #pprint(vid_dict)
@@ -36,6 +39,7 @@ for root, subdirs, files in os.walk('randomfiles'):
             file_type = "videos"
 
         elif ext_file in ['JPG','PNG','JPEG','HEIC']:
+            img_file_read_ct += 1
             img = PIL.Image.open(file_name)
             img_dict = img._getexif()
             try:
@@ -59,6 +63,7 @@ for root, subdirs, files in os.walk('randomfiles'):
         else:
             print(f"Unknown format {ext_file}")
             info_found = False
+            file_ign_ct += 1
 
         if info_found:
             #print(model)
@@ -67,9 +72,10 @@ for root, subdirs, files in os.walk('randomfiles'):
             #print(to_folder_name)
             to_create_folder = os.path.join('organized',file_type,model,to_folder_name)
             if to_create_folder not in check_created_folders:
-                print(f"create {to_create_folder}")
+                print(f"created folder {to_create_folder}")
                 os.makedirs(to_create_folder)
                 check_created_folders.append(to_create_folder)
+                folder_create_ct += 1
 
             for seq in range(1,100000):
                 to_file_name = f'{creation_time[:4]}{creation_time[5:7]}{creation_time[8:10]}_{seq:05}.{ext_file.lower()}'
@@ -78,6 +84,15 @@ for root, subdirs, files in os.walk('randomfiles'):
                     break
 
             shutil.copy2(file_name,os.path.join(to_create_folder,to_file_name))
-            print(f'{file_name}-->{os.path.join(to_create_folder,to_file_name)}')
+            file_copied_ct += 1
+            print(f'copied {file_name}-->{os.path.join(to_create_folder,to_file_name)}')
+
+print(f"Files read : {file_read_ct}")
+print(f"Images read : {img_file_read_ct}")
+print(f"Videos read : {video_file_read_ct}")
+print(f"Files ignored : {file_ign_ct}")
+print(f"Folders created : {folder_create_ct}")
+print(f"Files copied : {file_copied_ct}")
+
             
                 
