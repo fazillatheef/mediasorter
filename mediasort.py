@@ -1,6 +1,5 @@
 import PIL.Image,PIL.ExifTags,os
 import ffmpeg
-from pprint import pprint# can be removed once complete
 from datetime import datetime
 import shutil
 
@@ -9,12 +8,10 @@ check_created_files = []
 file_read_ct = img_file_read_ct = file_ign_ct = video_file_read_ct = folder_create_ct = file_copied_ct =  0
 
 for root, subdirs, files in os.walk('randomfiles'):
-    #print(root,subdirs,files)
     for each_file in files:
         file_read_ct += 1
         info_found = True
         file_name = os.path.join(root,each_file)
-        #print(f"\n{file_name}")
         try:
             ext_file = file_name[file_name.rfind('.')+1:].upper()
         except:
@@ -24,7 +21,6 @@ for root, subdirs, files in os.walk('randomfiles'):
             video_file_read_ct += 1
             vid_dict = ffmpeg.probe(file_name)["streams"]
             model = 'Other video'
-            #pprint(vid_dict)
             try:
                 creation_time = vid_dict[0]['tags']['creation_time']
                 model = 'Android video'
@@ -66,10 +62,7 @@ for root, subdirs, files in os.walk('randomfiles'):
             file_ign_ct += 1
 
         if info_found:
-            #print(model)
-            #print(creation_time)
             to_folder_name = f'{creation_time[:4]}-{creation_time[5:7]}'
-            #print(to_folder_name)
             to_create_folder = os.path.join('organized',file_type,model,to_folder_name)
             if to_create_folder not in check_created_folders:
                 print(f"created folder {to_create_folder}")
