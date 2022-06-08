@@ -3,10 +3,15 @@ import ffmpeg
 from datetime import datetime
 import shutil
 
-check_created_folders = []
-check_created_files = []
+DUMMY_MODE = True
+
+check_created_folders = [] #Stop trying to create the directory again and again
+check_created_files = [] #To check if sequence number must be incremented
 file_read_ct = img_file_read_ct = file_ign_ct = video_file_read_ct = folder_create_ct = file_copied_ct =  0
 
+if DUMMY_MODE:
+    print("Running in dummy mode!!!")
+#Go thru folder structure
 for root, subdirs, files in os.walk('randomfiles'):
     for each_file in files:
         file_read_ct += 1
@@ -16,10 +21,16 @@ for root, subdirs, files in os.walk('randomfiles'):
             ext_file = file_name[file_name.rfind('.')+1:].upper()
         except:
             ext_file = ""
+        #Find last modified date to use incase no meta data is available
         creation_time = datetime.fromtimestamp(os.path.getmtime(file_name)).strftime("%Y-%m-%d")
         if ext_file in ['MOV','3GP','MP4','MPEG']:
             video_file_read_ct += 1
             vid_dict = ffmpeg.probe(file_name)["streams"]
+            # Decided model based on following
+            # If there it is MOV format, it is either DSLR or iphone
+            # If there is a creation date, it is an Android video
+            # If there it is 3GP, then it is an old video
+            # Else it is categorized as Other video
             model = 'Other video'
             try:
                 creation_time = vid_dict[0]['tags']['creation_time']
@@ -36,6 +47,7 @@ for root, subdirs, files in os.walk('randomfiles'):
 
         elif ext_file in ['JPG','PNG','JPEG','HEIC']:
             img_file_read_ct += 1
+            # Read the meta data from EXIF, if not found model is marked as Unknown
             img = PIL.Image.open(file_name)
             img_dict = img._getexif()
             try:
@@ -66,18 +78,20 @@ for root, subdirs, files in os.walk('randomfiles'):
             to_create_folder = os.path.join('organized',file_type,model,to_folder_name)
             if to_create_folder not in check_created_folders:
                 print(f"created folder {to_create_folder}")
-                os.makedirs(to_create_folder)
+                if not DUMMY_MODE:
+                    os.makedirs(to_create_folder)
+                    folder_create_ct += 1
                 check_created_folders.append(to_create_folder)
-                folder_create_ct += 1
 
             for seq in range(1,100000):
                 to_file_name = f'{creation_time[:4]}{creation_time[5:7]}{creation_time[8:10]}_{seq:05}.{ext_file.lower()}'
                 if to_file_name not in check_created_files:
                     check_created_files.append(to_file_name)
                     break
-
-            shutil.copy2(file_name,os.path.join(to_create_folder,to_file_name))
-            file_copied_ct += 1
+            if not DUMMY_MODE:
+                # copy2 used to copy without changing the modified dates 
+                shutil.copy2(file_name,os.path.join(to_create_folder,to_file_name))
+                file_copied_ct += 1
             print(f'copied {file_name}-->{os.path.join(to_create_folder,to_file_name)}')
 
 print(f"Files read : {file_read_ct}")
@@ -85,7 +99,6 @@ print(f"Images read : {img_file_read_ct}")
 print(f"Videos read : {video_file_read_ct}")
 print(f"Files ignored : {file_ign_ct}")
 print(f"Folders created : {folder_create_ct}")
+print(f"Number of folders in list : {len(check_created_folders)}")
 print(f"Files copied : {file_copied_ct}")
-
-            
-                
+print(f"Number of files in list : {len(check_created_files)}")
