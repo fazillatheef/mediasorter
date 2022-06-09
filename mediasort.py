@@ -87,7 +87,7 @@ for root, subdirs, files in os.walk(args.path,topdown=True):
                     if k in PIL.ExifTags.TAGS
                 }
                 try:
-                    model = exif['Model']
+                    model = exif['Model'].strip()
                 except:
                     model = "Unknown"
                 
