@@ -1,2 +1,2 @@
-ffmpeg-python
-PIL
+ffmpeg-python==0.2.0
+Pillow==9.1.1
